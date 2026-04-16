@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#090d18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Application de gestion des vols de drone">
+<link rel="manifest" href="manifest.json">
+<title>DroneOps</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================== VARIABLES ===================== */
+:root {
+  --bg:      #090d18;
+  --bg2:     #0e1323;
+  --bg3:     #131929;
+  --card:    #182035;
+  --card2:   #1d2740;
+  --border:  rgba(90,140,255,0.12);
+  --border2: rgba(90,140,255,0.28);
+  --accent:  #4d9fff;
+  --accent2: #2d7ee0;
+  --green:   #1fd688;
+  --orange:  #ff9140;
+  --red:     #ff4554;
+  --yellow:  #ffd12a;
+  --purple:  #a78bfa;
+  --text:    #dce8ff;
+  --text2:   #7a90bf;
+  --text3:   #3d5080;
+  --mono:    'Space Mono', monospace;
+  --sans:    'Outfit', sans-serif;
+  --r:       14px;
+  --rs:      8px;
+}
+
+/* ===================== RESET ===================== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.5}
+input,select,textarea,button{font-family:var(--sans)}
+a{color:var(--accent);text-decoration:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ===================== LAYOUT ===================== */
+#app{display:flex;flex-direction:column;height:100vh;max-width:460px;margin:0 auto;position:relative}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 18px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;z-index:10}
+.header-logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4d9fff,#7c5fff);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.header-info{flex:1;min-width:0}
+.header-title{font-size:18px;font-weight:700;letter-spacing:0.3px}
+.header-sub{font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.header-btn:hover{border-color:var(--border2);color:var(--text)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 90px}
+.nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+.nav-btn{flex:1;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:var(--sans);font-size:10px;font-weight:500;transition:color .2s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;stroke-width:1.8}
+.nav-icon{position:relative}
+.nav-badge{position:absolute;top:-4px;right:-6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+
+/* ===================== TYPOGRAPHY ===================== */
+.section-title{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.page-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+
+/* ===================== CARDS ===================== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card-sm{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text2)}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card-header:last-child{margin-bottom:0}
+
+/* ===================== BADGES ===================== */
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:0.3px;white-space:nowrap}
+.b-ok{background:rgba(31,214,136,.14);color:var(--green);border:1px solid rgba(31,214,136,.28)}
+.b-warn{background:rgba(255,145,64,.14);color:var(--orange);border:1px solid rgba(255,145,64,.28)}
+.b-err{background:rgba(255,69,84,.14);color:var(--red);border:1px solid rgba(255,69,84,.28)}
+.b-info{background:rgba(77,159,255,.14);color:var(--accent);border:1px solid rgba(77,159,255,.28)}
+.b-grey{background:rgba(100,120,160,.14);color:var(--text2);border:1px solid rgba(100,120,160,.28)}
+.b-purple{background:rgba(167,139,250,.14);color:var(--purple);border:1px solid rgba(167,139,250,.28)}
+
+/* ===================== BUTTONS ===================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:var(--rs);font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff;width:100%}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:rgba(255,69,84,.14);color:var(--red);border:1px solid rgba(255,69,84,.28)}
+.btn-success{background:rgba(31,214,136,.14);color:var(--green);border:1px solid rgba(31,214,136,.28)}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:var(--rs)}
+.btn-row{display:flex;gap:8px;margin-top:12px}
+.btn-row .btn{flex:1}
+
+/* ===================== FORMS ===================== */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.form-input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a90bf' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+textarea.form-input{resize:vertical;min-height:80px}
+input[type="date"].form-input::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-hint{font-size:11px;color:var(--text3);margin-top:5px}
+
+/* ===================== PROGRESS ===================== */
+.progress-wrap{margin-bottom:10px}
+.progress-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .4s ease}
+.progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:5px}
+
+/* ===================== CHECKLIST ===================== */
+.cl-group-title{font-size:11px;font-weight:700;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.cl-item{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:all .15s;user-select:none}
+.cl-item:active{transform:scale(.99)}
+.cl-item.checked{border-color:rgba(31,214,136,.25);background:rgba(31,214,136,.04)}
+.cl-item.critical{border-left:3px solid var(--red);padding-left:10px}
+.cl-item.critical.checked{border-left-color:var(--green)}
+.cl-checkbox{width:22px;height:22px;border-radius:6px;border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:12px;font-weight:700}
+.cl-item.checked .cl-checkbox{background:var(--green);border-color:var(--green);color:#000}
+.cl-text{font-size:14px;flex:1;line-height:1.3}
+.cl-item.checked .cl-text{color:var(--text2);text-decoration:line-through}
+.cl-crit{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
+.cl-item.checked .cl-crit{background:var(--green)}
+/* edit mode */
+.cl-edit-item{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:6px}
+.cl-edit-item input{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;padding:2px 4px}
+.cl-edit-item input::placeholder{color:var(--text3)}
+.crit-toggle{padding:4px 8px;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);transition:all .15s}
+.crit-toggle.active{background:rgba(255,69,84,.14);color:var(--red);border-color:rgba(255,69,84,.3)}
+
+/* ===================== WEATHER ===================== */
+.wx-scroll{overflow-x:auto;margin:0 -16px;padding:0 16px 8px}
+.wx-row{display:flex;gap:8px;width:max-content}
+.wx-day{width:68px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all .15s;flex-shrink:0;text-align:center}
+.wx-day.ok{border-top:2px solid var(--green)}
+.wx-day.warn{border-top:2px solid var(--orange)}
+.wx-day.bad{border-top:2px solid var(--red)}
+.wx-day.sel{border-color:var(--accent);background:rgba(77,159,255,.08)}
+.wx-label{font-family:var(--mono);font-size:9px;color:var(--text2);font-weight:700}
+.wx-icon{font-size:20px;line-height:1}
+.wx-temp{font-weight:700;font-size:13px}
+.wx-wind{font-size:10px;color:var(--text2)}
+.wx-detail{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin:10px 0 12px}
+.wx-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.wx-stat{background:var(--card);border-radius:var(--rs);padding:10px 12px}
+.wx-stat-label{font-size:10px;color:var(--text2);font-family:var(--mono);letter-spacing:.3px}
+.wx-stat-val{font-size:19px;font-weight:700;margin-top:2px}
+.wx-stat-unit{font-size:11px;color:var(--text2);font-weight:400}
+.c-ok{color:var(--green)} .c-warn{color:var(--orange)} .c-bad{color:var(--red)}
+
+/* ===================== METAR ===================== */
+.metar-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:14px;font-family:var(--mono);font-size:12px;line-height:2;margin-bottom:12px;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.mt-sta{color:var(--accent);font-weight:700}
+.mt-time{color:var(--purple)}
+.mt-wind{color:var(--orange)}
+.mt-vis{color:var(--green)}
+.mt-cloud{color:var(--yellow)}
+.mt-temp{color:#f9a8d4}
+.mt-qnh{color:#34d399}
+.mt-remark{color:var(--text2)}
+.decode-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.decode-row:last-child{border-bottom:none}
+.decode-label{color:var(--text2)}
+
+/* ===================== DOCS ===================== */
+.doc-item{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.doc-item:hover{border-color:var(--border2)}
+.doc-icon{width:40px;height:40px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.doc-info{flex:1;min-width:0}
+.doc-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.doc-expiry-ok{color:var(--green)}
+.doc-expiry-warn{color:var(--orange)}
+.doc-expiry-err{color:var(--red)}
+
+/* ===================== MISSION CARDS ===================== */
+.mission-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.mission-card:hover,.mission-card.sel{border-color:rgba(77,159,255,.4);background:rgba(77,159,255,.04)}
+.m-name{font-weight:700;font-size:15px}
+.m-client{font-size:13px;color:var(--text2);margin-top:2px}
+.m-addr{font-size:12px;color:var(--text2);margin-top:4px;display:flex;align-items:flex-start;gap:5px}
+.m-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.m-date{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.m-progress{flex:1;min-width:0}
+.m-prog-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:2px}
+.m-prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+
+/* ===================== AIRSPACE ===================== */
+.air-zone{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);margin-bottom:6px;border:1px solid var(--border)}
+.air-ok{background:rgba(31,214,136,.06);border-color:rgba(31,214,136,.2)}
+.air-warn{background:rgba(255,145,64,.06);border-color:rgba(255,145,64,.2)}
+.air-bad{background:rgba(255,69,84,.06);border-color:rgba(255,69,84,.2)}
+.air-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.air-ok .air-dot{background:var(--green)}
+.air-warn .air-dot{background:var(--orange)}
+.air-bad .air-dot{background:var(--red)}
+.air-info{flex:1}
+.air-name{font-size:13px;font-weight:600}
+.air-desc{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* ===================== MODALS ===================== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;flex-direction:column;justify-content:flex-end}
+.modal-overlay.center{justify-content:center;align-items:center;padding:20px}
+.modal{background:var(--bg2);border-top:1px solid var(--border2);border-radius:18px 18px 0 0;padding:20px 18px;max-height:90vh;overflow-y:auto}
+.modal.center{border-radius:var(--r);border:1px solid var(--border2);width:100%;max-width:420px;max-height:85vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:6px 10px;cursor:pointer;color:var(--text2);font-size:13px}
+
+/* ===================== MISC ===================== */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.empty-state{text-align:center;padding:48px 20px}
+.empty-icon{font-size:52px;margin-bottom:14px}
+.empty-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--text2)}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;padding:36px}
+.spinner{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px}
+.stat-label{font-size:10px;color:var(--text2);font-family:var(--mono)}
+.stat-value{font-size:20px;font-weight:700;margin-top:2px;font-family:var(--mono)}
+.stat-unit{font-size:11px;color:var(--text2);font-weight:400}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;padding:9px 6px;border-radius:var(--rs);font-size:12px;font-weight:600;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:rgba(77,159,255,.12);color:var(--accent);border-color:rgba(77,159,255,.35)}
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:toastIn .25s ease;pointer-events:none;max-width:90vw;text-align:center}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.alert-box{padding:12px 14px;border-radius:var(--rs);font-size:13px;margin-bottom:12px;border:1px solid}
+.alert-info{background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--accent)}
+.alert-warn{background:rgba(255,145,64,.08);border-color:rgba(255,145,64,.25);color:var(--orange)}
+.alert-ok{background:rgba(31,214,136,.08);border-color:rgba(31,214,136,.25);color:var(--green)}
+.alert-err{background:rgba(255,69,84,.08);border-color:rgba(255,69,84,.25);color:var(--red)}
+.pulse{animation:pulseAnim 2s infinite}
+@keyframes pulseAnim{0%,100%{opacity:1}50%{opacity:.4}}
+.drone-battery{height:8px;border-radius:4px;background:var(--bg);overflow:hidden;margin-top:5px}
+.drone-battery-fill{height:100%;border-radius:4px}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;cursor:pointer;padding:4px 0;margin-bottom:14px;background:none;border:none;font-family:var(--sans)}
+.back-btn:hover{color:var(--text)}
+.notam-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px;margin-bottom:8px}
+.notam-id{font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:4px}
+.notam-text{font-size:12px;line-height:1.6;color:var(--text2)}
+.file-upload-area{border:2px dashed var(--border2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .2s}
+.file-upload-area:hover,.file-upload-area.drag{border-color:var(--accent);background:rgba(77,159,255,.05)}
+.file-upload-icon{font-size:40px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header" id="header">
+    <div class="header-logo">🚁</div>
+    <div class="header-info">
+      <div class="header-title">DroneOps</div>
+      <div class="header-sub" id="header-sub">Gestion de missions drone</div>
+    </div>
+    <div id="header-right"></div>
+  </div>
+  <div class="content" id="content"></div>
+  <nav class="nav" id="nav"></nav>
+</div>
+<div id="modal-container"></div>
+<div id="toast-container"></div>
+
+<script>
+/* =====================================================================
+   DRONEOPS — Application complète de gestion de vols drone
+   Version 1.0
+   ===================================================================== */
+
+// ======================== DONNÉES PAR DÉFAUT ========================
+
+const DEFAULT_CHECKLISTS = {
+  prep: {
+    id: 'prep',
+    name: 'Préparation mission',
+    icon: '📋',
+    description: 'À faire chez soi avant de partir',
+    color: 'var(--accent)',
+    groups: [
+      {
+        id: 'g1', title: 'Réglementation',
+        items: [
+          {id:'p1', text:'Vérification espace aérien (Géoportail/NOTAM)', critical:true},
+          {id:'p2', text:'Demande d\'autorisation DGAC si zone réglementée', critical:true},
+          {id:'p3', text:'Consultation des NOTAM locaux', critical:true},
+          {id:'p4', text:'Vérification validité assurance RC drone', critical:true},
+          {id:'p5', text:'Attestation de compétences télépilote à jour', critical:true},
+        ]
+      },
+      {
+        id: 'g2', title: 'Matériel',
+        items: [
+          {id:'p6', text:'Batteries drone chargées (100%)', critical:true},
+          {id:'p7', text:'Batterie télécommande chargée', critical:true},
+          {id:'p8', text:'Batterie tablette / smartphone chargée', critical:false},
+          {id:'p9', text:'Cartes SD formatées et insérées', critical:false},
+          {id:'p10', text:'Chargeurs / câbles emballés', critical:false},
+          {id:'p11', text:'Hélices de rechange emballées', critical:false},
+          {id:'p12', text:'Kit de nettoyage (soufflette, alcool, microfibre)', critical:false},
+        ]
+      },
+      {
+        id: 'g3', title: 'Mission',
+        items: [
+          {id:'p13', text:'Brief client / objectifs de la mission définis', critical:false},
+          {id:'p14', text:'Plan de vol préparé (waypoints ou zones)', critical:false},
+          {id:'p15', text:'Contact propriétaire/gestionnaire du site confirmé', critical:false},
+          {id:'p16', text:'Météo vérifiée pour le jour J', critical:true},
+          {id:'p17', text:'Trajet / lieu de stationnement identifié', critical:false},
+        ]
+      }
+    ]
+  },
+  drone: {
+    id: 'drone',
+    name: 'Inspection drone',
+    icon: '🚁',
+    description: 'Inspection physique complète du matériel',
+    color: 'var(--purple)',
+    groups: [
+      {
+        id: 'd1', title: 'Structure',
+        items: [
+          {id:'d1', text:'Châssis : pas de fissure ni choc visible', critical:true},
+          {id:'d2', text:'Bras : fixation ferme, pas de jeu', critical:true},
+          {id:'d3', text:'Hélices : pas de fissure, ébréchure ou déformation', critical:true},
+          {id:'d4', text:'Hélices correctement fixées (sens CW/CCW)', critical:true},
+          {id:'d5', text:'Trains d\'atterrissage intacts', critical:false},
+        ]
+      },
+      {
+        id: 'd2', title: 'Électronique',
+        items: [
+          {id:'d6', text:'Batterie : niveau > 90%, connecteur propre', critical:true},
+          {id:'d7', text:'Batterie : pas de gonflement ni chaleur anormale', critical:true},
+          {id:'d8', text:'Connecteurs moteurs : propres, pas d\'oxydation', critical:true},
+          {id:'d9', text:'LED de statut fonctionnelles', critical:false},
+          {id:'d10', text:'Antennes RC non endommagées', critical:false},
+        ]
+      },
+      {
+        id: 'd3', title: 'Caméra & Nacelle',
+        items: [
+          {id:'d11', text:'Nacelle déverrouillée (retrait du protège-nacelle)', critical:true},
+          {id:'d12', text:'Nacelle : rotation libre sur les 3 axes', critical:true},
+          {id:'d13', text:'Optique propre (pas de trace, condensation)', critical:false},
+          {id:'d14', text:'ND filter adapté aux conditions', critical:false},
+          {id:'d15', text:'Carte SD insérée et formatée', critical:false},
+        ]
+      },
+      {
+        id: 'd4', title: 'Logiciel',
+        items: [
+          {id:'d16', text:'Firmware drone à jour', critical:false},
+          {id:'d17', text:'Application de vol à jour', critical:false},
+          {id:'d18', text:'Géofencing vérifié (zones actives)', critical:true},
+          {id:'d19', text:'Altitude max configurée (120m légal FR)', critical:true},
+          {id:'d20', text:'Hauteur de retour RTH configurée (min 40m)', critical:true},
+        ]
+      }
+    ]
+  },
+  site: {
+    id: 'site',
+    name: 'Checklist sur site',
+    icon: '📍',
+    description: 'À effectuer sur zone avant le décollage',
+    color: 'var(--green)',
+    groups: [
+      {
+        id: 's1', title: 'Sécurité zone',
+        items: [
+          {id:'s1', text:'Zone de décollage dégagée (rayon 5m)', critical:true},
+          {id:'s2', text:'Zone de vol : obstacles identifiés (câbles, arbres)', critical:true},
+          {id:'s3', text:'Périmètre de sécurité établi si public présent', critical:true},
+          {id:'s4', text:'Conditions météo sur site confirmées (vent, pluie)', critical:true},
+          {id:'s5', text:'Contact riverains / sécurité si nécessaire', critical:false},
+        ]
+      },
+      {
+        id: 's2', title: 'Préparation vol',
+        items: [
+          {id:'s6', text:'GPS : acquisition > 8 satellites', critical:true},
+          {id:'s7', text:'Point HOME verrouillé et visible', critical:true},
+          {id:'s8', text:'Calibration boussole si déplacement > 50km', critical:false},
+          {id:'s9', text:'IMU stable, aucune alerte système', critical:true},
+          {id:'s10', text:'Liaison RC forte (< -70 dBm)', critical:true},
+          {id:'s11', text:'Test moteurs (arming test) validé', critical:true},
+        ]
+      },
+      {
+        id: 's3', title: 'Avant décollage',
+        items: [
+          {id:'s12', text:'Niveau batterie confirmé (>85% pour mission)', critical:true},
+          {id:'s13', text:'Plan de vol chargé / paramètres confirmés', critical:false},
+          {id:'s14', text:'Zone de sécurité libre, personnes avisées', critical:true},
+          {id:'s15', text:'Autorisation décollage confirmée (vocal ou gestuel)', critical:false},
+          {id:'s16', text:'Enregistrement vidéo / photo activé si nécessaire', critical:false},
+        ]
+      }
+    ]
+  }
+};
+
+const DEFAULT_DRONES = [
+  {id:1, name:'DJI Mini 4 Pro', serial:'', category:'C1', maxWindMs:10.7, batteryCapacity:2590, notes:'Drone principal'},
+  {id:2, name:'DJI Air 3', serial:'', category:'C1', maxWindMs:10.7, batteryCapacity:4241, notes:''},
+];
+
+const DOC_CATEGORIES = [
+  {id:'license', label:'Licence / Diplôme', icon:'🎓', color:'#a78bfa'},
+  {id:'insurance', label:'Assurance', icon:'🛡️', color:'#4d9fff'},
+  {id:'drone', label:'Certificat drone', icon:'🚁', color:'#1fd688'},
+  {id:'autorisation', label:'Autorisation', icon:'📄', color:'#ffd12a'},
+  {id:'other', label:'Autre', icon:'📁', color:'#7a90bf'},
+];
+
+const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const WMO_ICONS = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌦️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+
+// ======================== INDEXEDDB ========================
+
+const DocDB = {
+  db: null,
+  async init() {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open('DroneOpsDB', 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('documents')) {
+          db.createObjectStore('documents', {keyPath:'id'});
+        }
+      };
+      req.onsuccess = e => { this.db = e.target.result; res(); };
+      req.onerror = e => rej(e);
+    });
+  },
+  async getAll() {
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction('documents','readonly');
+      const req = tx.objectStore('documents').getAll();
+      req.onsuccess = () => res(req.result || []);
+      req.onerror = rej;
+    });
+  },
+  async put(doc) {
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction('documents','readwrite');
+      const req = tx.objectStore('documents').put(doc);
+      req.onsuccess = () => res();
+      req.onerror = rej;
+    });
+  },
+  async delete(id) {
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction('documents','readwrite');
+      const req = tx.objectStore('documents').delete(id);
+      req.onsuccess = () => res();
+      req.onerror = rej;
+    });
+  }
+};
+
+// ======================== STATE ========================
+
+const S = {
+  // Navigation
+  view: 'home',
+  missionDetailId: null,
+  missionDetailTab: 'info',
+  editingChecklistId: null,
+  editingGroupId: null,
+  // Data
+  missions: [],
+  drones: [...DEFAULT_DRONES],
+  checklists: JSON.parse(JSON.stringify(DEFAULT_CHECKLISTS)),
+  settings: {pilotName:'', pilotLicense:'', openAipKey:'', defaultDroneId:1},
+  // Documents (metadata only, files in IndexedDB)
+  docsMeta: [],
+  // Transient
+  weatherData: null,
+  weatherLoading: false,
+  weatherAddr: '',
+  metarData: null,
+  tafData: null,
+  notamData: null,
+  airspaceData: null,
+  airspaceLoading: false,
+  metarLoading: false,
+  metarTab: 'metar',
+  wxDay: 0,
+  // Forms
+  newMission: {name:'',client:'',addr:'',date:'',time:'08:00',droneId:1,type:'Photo',notes:''},
+  newDrone: {name:'',serial:'',category:'C1',maxWindMs:10,batteryCapacity:0,notes:''},
+  showNewDroneForm: false,
+  missionFormStep: 1,
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('droneops_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.missions) S.missions = parsed.missions;
+      if (parsed.drones) S.drones = parsed.drones;
+      if (parsed.checklists) S.checklists = parsed.checklists;
+      if (parsed.settings) S.settings = parsed.settings;
+      if (parsed.docsMeta) S.docsMeta = parsed.docsMeta;
+    }
+  } catch(e) { console.error('Load state error', e); }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('droneops_state', JSON.stringify({
+      missions: S.missions,
+      drones: S.drones,
+      checklists: S.checklists,
+      settings: S.settings,
+      docsMeta: S.docsMeta,
+    }));
+  } catch(e) { console.error('Save state error', e); }
+}
+
+// ======================== UTILS ========================
+
+let toastTimer = null;
+function showToast(msg, duration=2800) {
+  const el = document.getElementById('toast-container');
+  el.innerHTML = `<div class="toast">${msg}</div>`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.innerHTML = ''; }, duration);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  return Math.round((d - now) / 86400000);
+}
+
+function isToday(dateStr) {
+  return dateStr === new Date().toISOString().slice(0,10);
+}
+
+function isFuture(dateStr) {
+  return new Date(dateStr) >= new Date();
+}
+
+function genId() {
+  return Date.now() + Math.random().toString(36).slice(2,7);
+}
+
+function getMission(id) {
+  return S.missions.find(m => m.id === id);
+}
+
+function getDrone(id) {
+  return S.drones.find(d => d.id === id);
+}
+
+function getChecklistProgress(mission, clId) {
+  const cl = mission.checklists?.[clId];
+  if (!cl) return {done:0, total:0};
+  const total = cl.groups.reduce((a,g)=>a+g.items.length,0);
+  const done = cl.groups.reduce((a,g)=>a+g.items.filter(i=>i.checked).length,0);
+  return {done, total};
+}
+
+function hasCriticalUnchecked(mission, clId) {
+  const cl = mission.checklists?.[clId];
+  if (!cl) return false;
+  return cl.groups.some(g => g.items.some(i => i.critical && !i.checked));
+}
+
+function getMissionStatusLabel(status) {
+  return {planned:'Planifiée', inprogress:'En cours', done:'Terminée', archived:'Archivée'}[status] || 'Planifiée';
+}
+
+function getMissionStatusBadge(status) {
+  return {planned:'b-info', inprogress:'b-warn', done:'b-ok', archived:'b-grey'}[status] || 'b-info';
+}
+
+async function geocodeAddr(addr) {
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1&accept-language=fr`);
+  const data = await res.json();
+  if (!data.length) throw new Error('Adresse introuvable');
+  return {lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name};
+}
+
+function findNearestIcao(lat, lon) {
+  // Base de données simplifiée des principaux aérodromes français
+  const airports = [
+    {icao:'LFPG', name:'Paris CDG', lat:49.013, lon:2.549},
+    {icao:'LFPO', name:'Paris Orly', lat:48.723, lon:2.380},
+    {icao:'LFPB', name:'Paris Le Bourget', lat:48.969, lon:2.441},
+    {icao:'LFMN', name:'Nice', lat:43.658, lon:7.215},
+    {icao:'LFLL', name:'Lyon', lat:45.726, lon:5.090},
+    {icao:'LFML', name:'Marseille', lat:43.435, lon:5.215},
+    {icao:'LFBO', name:'Toulouse', lat:43.629, lon:1.364},
+    {icao:'LFBD', name:'Bordeaux', lat:44.828, lon:-0.715},
+    {icao:'LFRS', name:'Nantes', lat:47.153, lon:-1.611},
+    {icao:'LFQQ', name:'Lille', lat:50.563, lon:3.087},
+    {icao:'LFSB', name:'Bâle-Mulhouse', lat:47.589, lon:7.528},
+    {icao:'LFST', name:'Strasbourg', lat:48.538, lon:7.628},
+    {icao:'LFLY', name:'Lyon Bron', lat:45.727, lon:4.944},
+    {icao:'LFMK', name:'Carcassonne', lat:43.216, lon:2.306},
+    {icao:'LFBZ', name:'Biarritz', lat:43.468, lon:-1.532},
+  ];
+  let nearest = airports[0], minDist = Infinity;
+  for (const a of airports) {
+    const d = Math.sqrt((a.lat-lat)**2 + (a.lon-lon)**2);
+    if (d < minDist) { minDist = d; nearest = a; }
+  }
+  return nearest;
+}
+
+// ======================== API WEATHER ========================
+
+async function fetchWeather(lat, lon) {
+  S.weatherLoading = true; render();
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,weathercode,visibility_mean&wind_speed_unit=ms&timezone=auto&forecast_days=10`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const d = data.daily;
+    S.weatherData = d.time.map((t,i) => {
+      const date = new Date(t);
+      const wind = Math.round(d.windspeed_10m_max[i]*10)/10;
+      const rain = d.precipitation_probability_max[i]||0;
+      const tMax = Math.round(d.temperature_2m_max[i]);
+      const tMin = Math.round(d.temperature_2m_min[i]);
+      const vis = Math.round((d.visibility_mean?.[i]||8000)/1000*10)/10;
+      const wc = d.weathercode[i]||0;
+      let sky = 'ok';
+      if (wind>15 || rain>70 || wc>=80) sky='bad';
+      else if (wind>10 || rain>40 || wc>=51) sky='warn';
+      return {day:DAYS_FR[date.getDay()], date:t, temp:`${tMax}°/${tMin}°`, tMax, tMin, wind, rain, vis, sky, icon:WMO_ICONS[wc]||'🌤️', wc};
+    });
+    S.wxDay = 0;
+  } catch(e) {
+    showToast('⚠️ Météo indisponible: '+e.message);
+  }
+  S.weatherLoading = false; render();
+}
+
+// ======================== API METAR/TAF ========================
+
+async function fetchMetarTaf(icao) {
+  S.metarLoading = true; S.metarData = null; S.tafData = null; render();
+  try {
+    const [mRes, tRes] = await Promise.all([
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw&hours=2`),
+      fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`)
+    ]);
+    S.metarData = (await mRes.text()).trim();
+    S.tafData = (await tRes.text()).trim();
+    if (!S.metarData) S.metarData = `Aucun METAR disponible pour ${icao}`;
+    if (!S.tafData) S.tafData = `Aucun TAF disponible pour ${icao}`;
+  } catch(e) {
+    S.metarData = `Erreur: ${e.message}`;
+    S.tafData = `Erreur: ${e.message}`;
+  }
+  S.metarLoading = false; render();
+}
+
+// ======================== API NOTAM ========================
+
+async function fetchNotam(lat, lon) {
+  try {
+    const airport = findNearestIcao(lat, lon);
+    const res = await fetch(`https://aviationweather.gov/api/data/notam?icaoLocation=${airport.icao}&format=json`);
+    const data = await res.json();
+    S.notamData = {airport, items: (data || []).slice(0,15)};
+  } catch(e) {
+    S.notamData = {airport: findNearestIcao(lat,lon), items:[], error: e.message};
+  }
+  render();
+}
+
+// ======================== API AIRSPACE ========================
+
+async function checkAirspace(lat, lon) {
+  S.airspaceLoading = true; S.airspaceData = null; render();
+  const apiKey = S.settings.openAipKey;
+  if (!apiKey) {
+    S.airspaceData = {noKey: true};
+    S.airspaceLoading = false; render(); return;
+  }
+  try {
+    const res = await fetch(
+      `https://api.core.openaip.net/api/airspaces?pos=${lon},${lat}&radius=5000&token=${apiKey}`
+    );
+    const data = await res.json();
+    S.airspaceData = {zones: data.items || []};
+  } catch(e) {
+    S.airspaceData = {error: e.message, zones:[]};
+  }
+  S.airspaceLoading = false; render();
+}
+
+// ======================== METAR DECODER ========================
+
+function colorMetar(raw) {
+  return raw.split(' ').map(p => {
+    if (/^[A-Z]{4}$/.test(p)) return `<span class="mt-sta">${p}</span>`;
+    if (/^\d{6}Z$/.test(p)) return `<span class="mt-time">${p}</span>`;
+    if (/^\d{5}(G\d{2})?(KT|MPS)$/.test(p)) return `<span class="mt-wind">${p}</span>`;
+    if (/^\d{4}$/.test(p) || p==='CAVOK' || p==='9999') return `<span class="mt-vis">${p}</span>`;
+    if (/^(FEW|SCT|BKN|OVC|NSC|NCD)\d*/.test(p)) return `<span class="mt-cloud">${p}</span>`;
+    if (/^M?\d{2}\/M?\d{2}$/.test(p)) return `<span class="mt-temp">${p}</span>`;
+    if (/^[QA]\d{4}$/.test(p)) return `<span class="mt-qnh">${p}</span>`;
+    if (p==='RMK'||p.startsWith('AO')||p.startsWith('SLP')||p==='NOSIG'||p==='TEMPO') return `<span class="mt-remark">${p}</span>`;
+    return `<span>${p}</span>`;
+  }).join(' ');
+}
+
+function decodeMetarToRows(raw) {
+  const rows = [];
+  if (!raw || raw.startsWith('Erreur') || raw.startsWith('Aucun')) return rows;
+  const parts = raw.split(' ');
+  for (const p of parts) {
+    if (/^\d{5}(G\d{2})?(KT|MPS)$/.test(p)) {
+      const dir = p.slice(0,3)==='VRB'?'Variable':p.slice(0,3)+'°';
+      const spd = parseInt(p.slice(3,5));
+      const unit = p.endsWith('KT')?'kt':'m/s';
+      const ms = unit==='kt'?Math.round(spd*0.514):spd;
+      const g = p.includes('G')?parseInt(p.slice(p.indexOf('G')+1,p.indexOf('G')+3)):null;
+      rows.push({label:'Vent', value:`${dir} — ${spd}${unit}${g?`, rafales ${g}${unit}`:''}${unit==='kt'?` (${ms}m/s)`:''}`, status: ms<=10?'ok':ms<=15?'warn':'bad', verdict: ms<=10?'OK':ms<=15?'Fort':'Dangereux'});
+    }
+    if (p==='CAVOK'||p==='9999') rows.push({label:'Visibilité', value:p==='CAVOK'?'CAVOK > 10km':'> 10km', status:'ok', verdict:'OK'});
+    if (/^\d{4}$/.test(p) && parseInt(p)>=100 && parseInt(p)<9999) {
+      const vis = parseInt(p);
+      rows.push({label:'Visibilité', value:`${vis}m`, status:vis>=5000?'ok':vis>=1500?'warn':'bad', verdict:vis>=5000?'Bonne':vis>=1500?'Réduite':'Mauvaise'});
+    }
+    if (/^M?\d{2}\/M?\d{2}$/.test(p)) {
+      const [t,dp]=p.split('/');
+      rows.push({label:'Temp / Rosée', value:`${t.replace('M','-')}°C / ${dp.replace('M','-')}°C`, status:'', verdict:''});
+    }
+    if (/^Q\d{4}$/.test(p)) {
+      const qnh=parseInt(p.slice(1));
+      rows.push({label:'QNH', value:`${qnh} hPa`, status:qnh>=995?'ok':'warn', verdict:qnh>=995?'Normal':qnh>990?'Bas':'Très bas'});
+    }
+  }
+  return rows;
+}
+
+// ======================== VIEWS ========================
+
+function renderNav() {
+  const tabs = [
+    {id:'home', label:'Accueil', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`},
+    {id:'docs', label:'Documents', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`},
+    {id:'checklists', label:'Check-lists', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>`},
+    {id:'missions', label:'Missions', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>`},
+    {id:'settings', label:'Réglages', icon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`},
+  ];
+  const today = new Date().toISOString().slice(0,10);
+  const todayMissions = S.missions.filter(m => m.date === today && m.status !== 'done' && m.status !== 'archived').length;
+  document.getElementById('nav').innerHTML = tabs.map(t => `
+    <button class="nav-btn ${S.view===t.id||S.view==='mission-detail'&&t.id==='missions'?'active':''}" onclick="setView('${t.id}')">
+      <div class="nav-icon">
+        ${t.icon}
+        ${t.id==='missions'&&todayMissions>0?`<div class="nav-badge">${todayMissions}</div>`:''}
+      </div>
+      <span>${t.label}</span>
+    </button>
+  `).join('');
+}
+
+// ---- HOME ----
+function viewHome() {
+  document.getElementById('header-sub').textContent = S.settings.pilotName ? `Bonjour, ${S.settings.pilotName}` : 'Gestion de missions drone';
+  document.getElementById('header-right').innerHTML = '';
+
+  const upcoming = S.missions.filter(m => m.date >= new Date().toISOString().slice(0,10) && m.status !== 'archived').sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
+  const today = S.missions.filter(m => isToday(m.date) && m.status !== 'archived');
+  const expiringDocs = S.docsMeta.filter(d => {
+    if (!d.expiry) return false;
+    const days = daysUntil(d.expiry);
+    return days !== null && days <= 60;
+  });
+
+  let html = '';
+
+  // Today alerts
+  if (today.length) {
+    html += `<div class="alert-ok" style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">🛫</span>
+      <div><div style="font-weight:600">Mission aujourd'hui !</div>
+      <div style="font-size:12px;margin-top:1px">${today.map(m=>m.name).join(', ')}</div></div>
+    </div>`;
+  }
+  if (expiringDocs.length) {
+    html += `<div class="alert-warn" style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">⚠️</span>
+      <div><div style="font-weight:600">${expiringDocs.length} document(s) expirent bientôt</div>
+      <div style="font-size:12px;margin-top:1px">${expiringDocs.map(d=>`${d.name} (${daysUntil(d.expiry)}j)`).join(', ')}</div></div>
+    </div>`;
+  }
+
+  // Quick stats
+  html += `<div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">MISSIONS</div>
+      <div class="stat-value">${S.missions.filter(m=>m.status!=='archived').length}<span class="stat-unit"> actives</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">DRONES</div>
+      <div class="stat-value">${S.drones.length}<span class="stat-unit"> enreg.</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">DOCUMENTS</div>
+      <div class="stat-value">${S.docsMeta.length}<span class="stat-unit"> fichiers</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">VOLS EFFECTUÉS</div>
+      <div class="stat-value">${S.missions.filter(m=>m.status==='done'||m.status==='archived').length}<span class="stat-unit"> total</span></div>
+    </div>
+  </div>`;
+
+  // Upcoming missions
+  html += `<div class="section-title">Prochaines missions</div>`;
+  if (!upcoming.length) {
+    html += `<div class="card" style="text-align:center;padding:28px">
+      <div style="font-size:36px;margin-bottom:10px">📭</div>
+      <div style="font-weight:600;margin-bottom:6px">Aucune mission planifiée</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Créez votre première mission pour commencer</div>
+      <button class="btn btn-primary" onclick="setView('missions')">+ Créer une mission</button>
+    </div>`;
+  } else {
+    upcoming.forEach(m => {
+      const drone = getDrone(m.droneId);
+      const prog = ['prep','drone','site'].map(id=>getChecklistProgress(m,id));
+      const totalDone = prog.reduce((a,p)=>a+p.done,0);
+      const totalItems = prog.reduce((a,p)=>a+p.total,0);
+      const pct = totalItems ? Math.round(totalDone/totalItems*100) : 0;
+      html += `<div class="mission-card" onclick="openMission('${m.id}')">
+        <div class="m-name">${m.name}</div>
+        <div class="m-client">${m.client||'—'}</div>
+        <div class="m-addr">📍 ${m.addr}</div>
+        <div class="m-footer">
+          <div>
+            <div class="m-date">📅 ${formatDateShort(m.date)} ${m.time||''}</div>
+            ${drone?`<div style="font-size:11px;color:var(--text2);margin-top:2px">🚁 ${drone.name}</div>`:''}
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <span class="badge ${getMissionStatusBadge(m.status)}">${getMissionStatusLabel(m.status)}</span>
+            <div class="m-prog-bar" style="margin-top:5px;width:80px"><div class="m-prog-fill" style="width:${pct}%"></div></div>
+            <div style="font-size:10px;color:var(--text2);font-family:var(--mono);margin-top:2px">${pct}%</div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // Quick access
+  html += `<div class="section-title">Accès rapides</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn btn-secondary" onclick="setView('docs')">📁 Mes documents</button>
+    <button class="btn btn-secondary" onclick="setView('checklists')">✅ Check-lists</button>
+    <button class="btn btn-secondary" onclick="setView('missions')">+ Nouvelle mission</button>
+    <button class="btn btn-secondary" onclick="setView('settings')">⚙️ Réglages</button>
+  </div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+// ---- DOCUMENTS ----
+function viewDocs() {
+  document.getElementById('header-sub').textContent = 'Mes documents';
+  document.getElementById('header-right').innerHTML = `<button class="header-btn" onclick="openAddDocModal()">+ Ajouter</button>`;
+
+  let html = '';
+  const cats = DOC_CATEGORIES.map(c => ({...c, docs: S.docsMeta.filter(d=>d.category===c.id)}));
+
+  if (!S.docsMeta.length) {
+    html += `<div class="empty-state">
+      <div class="empty-icon">📁</div>
+      <div class="empty-title">Aucun document</div>
+      <div class="empty-sub">Ajoutez vos assurances, licences, certificats et autorisations pour les avoir toujours avec vous</div>
+      <button class="btn btn-primary" style="margin-top:18px;width:auto;padding:11px 24px" onclick="openAddDocModal()">+ Ajouter un document</button>
+    </div>`;
+  } else {
+    for (const cat of cats) {
+      if (!cat.docs.length) continue;
+      html += `<div class="section-title">${cat.icon} ${cat.label}</div>`;
+      cat.docs.forEach(doc => {
+        const days = doc.expiry ? daysUntil(doc.expiry) : null;
+        let expiryHtml = '';
+        let expiryClass = '';
+        if (days !== null) {
+          if (days < 0) { expiryClass='doc-expiry-err'; expiryHtml=`⛔ Expiré il y a ${Math.abs(days)}j`; }
+          else if (days <= 30) { expiryClass='doc-expiry-warn'; expiryHtml=`⚠️ Expire dans ${days}j`; }
+          else { expiryClass='doc-expiry-ok'; expiryHtml=`✅ Valide jusqu'au ${formatDateShort(doc.expiry)}`; }
+        }
+        html += `<div class="doc-item">
+          <div class="doc-icon" style="background:${cat.color}20">${cat.icon}</div>
+          <div class="doc-info">
+            <div class="doc-name">${doc.name}</div>
+            <div class="doc-meta">
+              ${doc.number?`N° ${doc.number} — `:''}${doc.addedDate||''}
+              ${expiryHtml?`<span class="${expiryClass}" style="display:block;margin-top:2px">${expiryHtml}</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-secondary btn-icon" title="Voir" onclick="viewDoc('${doc.id}')">👁</button>
+            <button class="btn btn-sm btn-danger btn-icon" title="Supprimer" onclick="deleteDoc('${doc.id}')">🗑</button>
+          </div>
+        </div>`;
+      });
+    }
+    // Show empty categories
+    html += `<button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="openAddDocModal()">+ Ajouter un document</button>`;
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function openAddDocModal() {
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Ajouter un document</div>
+        <div class="form-group">
+          <label class="form-label">Nom du document</label>
+          <input class="form-input" id="doc-name" placeholder="Ex: Attestation assurance RC drone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catégorie</label>
+          <select class="form-input" id="doc-cat">
+            ${DOC_CATEGORIES.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro / Référence (optionnel)</label>
+          <input class="form-input" id="doc-num" placeholder="Ex: 2024-FR-42">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date d'expiration (optionnel)</label>
+          <input type="date" class="form-input" id="doc-expiry">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fichier (PDF, image)</label>
+          <div class="file-upload-area" id="drop-zone" onclick="document.getElementById('doc-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDocDrop(event)">
+            <div class="file-upload-icon">📎</div>
+            <div style="font-size:14px;font-weight:600">Appuyer pour sélectionner</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">PDF, JPG, PNG — max 20 Mo</div>
+            <div id="drop-file-name" style="font-size:12px;color:var(--green);margin-top:8px"></div>
+          </div>
+          <input type="file" id="doc-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleDocFile(this)">
+        </div>
+        <button class="btn btn-primary" onclick="saveDoc()">💾 Enregistrer le document</button>
+      </div>
+    </div>`;
+}
+
+let pendingDocFile = null;
+function handleDocFile(input) {
+  if (input.files[0]) {
+    pendingDocFile = input.files[0];
+    document.getElementById('drop-file-name').textContent = `✓ ${pendingDocFile.name}`;
+  }
+}
+function handleDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) { pendingDocFile = file; document.getElementById('drop-file-name').textContent = `✓ ${file.name}`; }
+}
+
+async function saveDoc() {
+  const name = document.getElementById('doc-name').value.trim();
+  const cat = document.getElementById('doc-cat').value;
+  const num = document.getElementById('doc-num').value.trim();
+  const expiry = document.getElementById('doc-expiry').value;
+  if (!name) { showToast('⚠️ Le nom est requis'); return; }
+  const id = genId();
+  const meta = {id, name, category:cat, number:num, expiry, addedDate: new Date().toLocaleDateString('fr-FR'), hasFile: !!pendingDocFile, fileName: pendingDocFile?.name||''};
+  if (pendingDocFile) {
+    const blob = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(pendingDocFile); });
+    await DocDB.put({id, name, blob, mimeType: pendingDocFile.type});
+  }
+  S.docsMeta.push(meta);
+  pendingDocFile = null;
+  saveState();
+  closeModal();
+  showToast('✅ Document ajouté !');
+  viewDocs();
+}
+
+async function viewDoc(id) {
+  const meta = S.docsMeta.find(d=>d.id===id);
+  if (!meta?.hasFile) { showToast('⚠️ Aucun fichier associé'); return; }
+  const doc = await DocDB.getAll().then(docs=>docs.find(d=>d.id===id));
+  if (!doc) { showToast('⚠️ Fichier introuvable'); return; }
+  const win = window.open('');
+  win.document.write(`<title>${meta.name}</title><body style="margin:0;background:#000"><img src="${doc.blob}" style="max-width:100%;display:block;margin:auto"></body>`);
+  if (doc.mimeType==='application/pdf') win.document.write(`<body style="margin:0"><embed src="${doc.blob}" width="100%" height="100%" type="application/pdf"></body>`);
+}
+
+async function deleteDoc(id) {
+  if (!confirm('Supprimer ce document ?')) return;
+  S.docsMeta = S.docsMeta.filter(d=>d.id!==id);
+  await DocDB.delete(id).catch(()=>{});
+  saveState(); viewDocs(); showToast('🗑️ Document supprimé');
+}
+
+// ---- CHECKLISTS ----
+function viewChecklists() {
+  document.getElementById('header-sub').textContent = 'Modèles de check-lists';
+  document.getElementById('header-right').innerHTML = '';
+
+  if (S.editingChecklistId) {
+    renderChecklistEditor();
+    return;
+  }
+
+  let html = `<div class="alert-info" style="font-size:13px">Ces check-lists sont vos <strong>modèles</strong>. Chaque mission en reçoit une copie indépendante que vous complétez sur le terrain.</div>`;
+
+  for (const [id, cl] of Object.entries(S.checklists)) {
+    const total = cl.groups.reduce((a,g)=>a+g.items.length,0);
+    html += `<div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${cl.icon} ${cl.name}</div>
+          <div class="card-sub">${cl.description}</div>
+        </div>
+        <span class="badge b-grey">${total} items</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="previewChecklist('${id}')">👁 Aperçu</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="editChecklist('${id}')">✏️ Modifier</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="resetChecklist('${id}')" title="Réinitialiser">↺</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function previewChecklist(id) {
+  const cl = S.checklists[id];
+  let html = `<div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="font-size:28px">${cl.icon}</span>
+      <div><div class="modal-title" style="margin-bottom:0">${cl.name}</div>
+      <div style="font-size:12px;color:var(--text2)">${cl.description}</div></div>
+    </div>`;
+  for (const g of cl.groups) {
+    html += `<div class="cl-group-title">${g.title}</div>`;
+    for (const item of g.items) {
+      html += `<div class="cl-item ${item.critical?'critical':''}" style="cursor:default;pointer-events:none">
+        <div class="cl-checkbox"></div>
+        <div class="cl-text">${item.text}</div>
+        ${item.critical?`<div class="cl-crit"></div>`:''}
+      </div>`;
+    }
+  }
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh">${html}</div>
+    </div>`;
+}
+
+function editChecklist(id) {
+  S.editingChecklistId = id;
+  render();
+}
+
+function renderChecklistEditor() {
+  const cl = S.checklists[S.editingChecklistId];
+  document.getElementById('header-sub').textContent = `Modifier — ${cl.name}`;
+  document.getElementById('header-right').innerHTML = `<button class="header-btn" onclick="S.editingChecklistId=null;render()">✓ Terminé</button>`;
+
+  let html = `<button class="back-btn" onclick="S.editingChecklistId=null;render()">← Retour</button>
+    <div class="alert-info" style="font-size:12px;margin-bottom:14px">
+      ✏️ Modifiez vos items. <strong>Point rouge</strong> = critique (bloque la progression). 
+      Appuyez sur 🗑 pour supprimer, + pour ajouter.
+    </div>`;
+
+  for (const g of cl.groups) {
+    html += `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="card-title" style="font-size:13px;color:var(--text2)">${g.title}</div>
+        <button class="btn btn-danger btn-sm" style="font-size:11px" onclick="deleteGroup('${S.editingChecklistId}','${g.id}')">🗑 Groupe</button>
+      </div>`;
+    for (const item of g.items) {
+      html += `<div class="cl-edit-item">
+        <input value="${item.text.replace(/"/g,'&quot;')}" oninput="updateItemText('${S.editingChecklistId}','${g.id}','${item.id}',this.value)" placeholder="Texte de l'item...">
+        <button class="crit-toggle ${item.critical?'active':''}" title="Marquer critique" onclick="toggleItemCritical('${S.editingChecklistId}','${g.id}','${item.id}')">!</button>
+        <button class="btn btn-danger btn-sm btn-icon" style="font-size:14px" onclick="deleteItem('${S.editingChecklistId}','${g.id}','${item.id}')">🗑</button>
+      </div>`;
+    }
+    html += `<button class="btn btn-secondary btn-sm" style="width:100%;margin-top:4px" onclick="addItem('${S.editingChecklistId}','${g.id}')">+ Ajouter un item</button>
+    </div>`;
+  }
+  html += `<button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="addGroup('${S.editingChecklistId}')">+ Ajouter un groupe</button>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function updateItemText(clId, gId, itemId, val) {
+  const g = S.checklists[clId].groups.find(g=>g.id===gId);
+  if (g) { const item = g.items.find(i=>i.id===itemId); if(item) item.text = val; }
+  saveState();
+}
+
+function toggleItemCritical(clId, gId, itemId) {
+  const g = S.checklists[clId].groups.find(g=>g.id===gId);
+  if (g) { const item = g.items.find(i=>i.id===itemId); if(item) item.critical = !item.critical; }
+  saveState(); renderChecklistEditor();
+}
+
+function deleteItem(clId, gId, itemId) {
+  const g = S.checklists[clId].groups.find(g=>g.id===gId);
+  if (g) g.items = g.items.filter(i=>i.id!==itemId);
+  saveState(); renderChecklistEditor();
+}
+
+function addItem(clId, gId) {
+  const g = S.checklists[clId].groups.find(g=>g.id===gId);
+  if (g) g.items.push({id:genId(), text:'Nouvel item', critical:false});
+  saveState(); renderChecklistEditor();
+}
+
+function addGroup(clId) {
+  const name = prompt('Nom du groupe :');
+  if (!name) return;
+  S.checklists[clId].groups.push({id:genId(), title:name, items:[]});
+  saveState(); renderChecklistEditor();
+}
+
+function deleteGroup(clId, gId) {
+  if (!confirm('Supprimer ce groupe ?')) return;
+  S.checklists[clId].groups = S.checklists[clId].groups.filter(g=>g.id!==gId);
+  saveState(); renderChecklistEditor();
+}
+
+function resetChecklist(id) {
+  if (!confirm(`Réinitialiser la check-list "${S.checklists[id].name}" aux valeurs par défaut ?`)) return;
+  S.checklists[id] = JSON.parse(JSON.stringify(DEFAULT_CHECKLISTS[id]));
+  saveState(); showToast('↺ Check-list réinitialisée'); viewChecklists();
+}
+
+// ---- MISSIONS ----
+function viewMissions() {
+  document.getElementById('header-sub').textContent = 'Mes missions';
+  document.getElementById('header-right').innerHTML = `<button class="header-btn" onclick="openNewMissionModal()">+ Nouvelle</button>`;
+
+  const active = S.missions.filter(m=>m.status!=='archived').sort((a,b)=>a.date.localeCompare(b.date));
+  const archived = S.missions.filter(m=>m.status==='archived').sort((a,b)=>b.date.localeCompare(a.date));
+
+  let html = `<div class="tabs">
+    <button class="tab active" id="tab-active" onclick="toggleMissionTab('active')">Actives (${active.length})</button>
+    <button class="tab" id="tab-archived" onclick="toggleMissionTab('archived')">Archivées (${archived.length})</button>
+  </div>
+  <div id="missions-active">`;
+
+  if (!active.length) {
+    html += `<div class="empty-state">
+      <div class="empty-icon">🛸</div>
+      <div class="empty-title">Aucune mission active</div>
+      <div class="empty-sub">Planifiez votre prochain vol</div>
+      <button class="btn btn-primary" style="margin-top:18px;width:auto;padding:11px 24px" onclick="openNewMissionModal()">+ Créer une mission</button>
+    </div>`;
+  } else {
+    active.forEach(m => {
+      const drone = getDrone(m.droneId);
+      const prog = ['prep','drone','site'].map(id=>getChecklistProgress(m,id));
+      const totalDone = prog.reduce((a,p)=>a+p.done,0);
+      const totalItems = prog.reduce((a,p)=>a+p.total,0);
+      const pct = totalItems?Math.round(totalDone/totalItems*100):0;
+      html += `<div class="mission-card" onclick="openMission('${m.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div class="m-name">${m.name}</div>
+            <div class="m-client">${m.client||'—'}</div>
+          </div>
+          <span class="badge ${getMissionStatusBadge(m.status)}">${getMissionStatusLabel(m.status)}</span>
+        </div>
+        <div class="m-addr">📍 ${m.addr}</div>
+        <div class="m-footer">
+          <div>
+            <div class="m-date">📅 ${formatDateShort(m.date)} ${m.time||''}</div>
+            ${drone?`<div style="font-size:11px;color:var(--text2);margin-top:1px">🚁 ${drone.name}</div>`:''}
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:10px;color:var(--text2);font-family:var(--mono)">${totalDone}/${totalItems} checks</div>
+            <div class="m-prog-bar" style="margin-top:4px;width:90px"><div class="m-prog-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div><div id="missions-archived" style="display:none">`;
+  if (!archived.length) {
+    html += `<div style="text-align:center;padding:30px;color:var(--text2);font-size:14px">Aucune mission archivée</div>`;
+  } else {
+    archived.forEach(m => {
+      html += `<div class="mission-card" onclick="openMission('${m.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="m-name">${m.name}</div>
+          <span class="badge b-grey">Archivée</span>
+        </div>
+        <div class="m-client">${m.client||'—'}</div>
+        <div class="m-addr">📍 ${m.addr}</div>
+        <div class="m-footer"><div class="m-date">📅 ${formatDateShort(m.date)}</div></div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function toggleMissionTab(t) {
+  document.getElementById('tab-active').className = 'tab'+(t==='active'?' active':'');
+  document.getElementById('tab-archived').className = 'tab'+(t==='archived'?' active':'');
+  document.getElementById('missions-active').style.display = t==='active'?'':'none';
+  document.getElementById('missions-archived').style.display = t==='archived'?'':'none';
+}
+
+function openNewMissionModal() {
+  S.missionFormStep = 1;
+  S.newMission = {name:'',client:'',addr:'',date:new Date().toISOString().slice(0,10),time:'09:00',droneId:S.drones[0]?.id||1,type:'Photo',notes:''};
+  renderNewMissionModal();
+}
+
+function renderNewMissionModal() {
+  const step = S.missionFormStep;
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="modal-title" style="margin-bottom:0">Nouvelle mission</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2)">${step}/2</div>
+        </div>
+        <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${step===1?'50':'100'}%"></div></div></div>
+        ${step===1 ? renderNewMissionStep1() : renderNewMissionStep2()}
+      </div>
+    </div>`;
+}
+
+function renderNewMissionStep1() {
+  const m = S.newMission;
+  return `
+    <div class="form-group">
+      <label class="form-label">Nom de la mission *</label>
+      <input class="form-input" id="nm-name" placeholder="Ex: Inspection toiture Dupont" value="${m.name}" oninput="S.newMission.name=this.value">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Client</label>
+      <input class="form-input" id="nm-client" placeholder="Nom du client ou organisation" value="${m.client}" oninput="S.newMission.client=this.value">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Adresse du lieu de vol *</label>
+      <input class="form-input" id="nm-addr" placeholder="15 Rue de la Paix, 75001 Paris" value="${m.addr}" oninput="S.newMission.addr=this.value">
+      <div class="form-hint">L'adresse sera géocodée pour la météo et les espaces aériens</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input type="date" class="form-input" id="nm-date" value="${m.date}" oninput="S.newMission.date=this.value">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Heure</label>
+        <input type="time" class="form-input" id="nm-time" value="${m.time}" oninput="S.newMission.time=this.value">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="newMissionNext()">Suivant →</button>
+    </div>`;
+}
+
+function renderNewMissionStep2() {
+  const m = S.newMission;
+  return `
+    <div class="form-group">
+      <label class="form-label">Drone</label>
+      <select class="form-input" id="nm-drone" onchange="S.newMission.droneId=parseInt(this.value)">
+        ${S.drones.map(d=>`<option value="${d.id}" ${d.id===m.droneId?'selected':''}>${d.name} (${d.category})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type de mission</label>
+      <select class="form-input" id="nm-type" onchange="S.newMission.type=this.value">
+        ${['Photo','Vidéo','Inspection','Cartographie','Thermographie','Cinéma','Autre'].map(t=>`<option ${t===m.type?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes / Autorisations</label>
+      <textarea class="form-input" id="nm-notes" placeholder="N° autorisation DGAC, instructions client, accès site..." oninput="S.newMission.notes=this.value">${m.notes}</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="S.missionFormStep=1;renderNewMissionModal()">← Retour</button>
+      <button class="btn btn-primary" onclick="saveMission()">✈️ Créer la mission</button>
+    </div>`;
+}
+
+function newMissionNext() {
+  if (!S.newMission.name.trim()) { showToast('⚠️ Le nom est requis'); return; }
+  if (!S.newMission.addr.trim()) { showToast('⚠️ L\'adresse est requise'); return; }
+  if (!S.newMission.date) { showToast('⚠️ La date est requise'); return; }
+  S.missionFormStep = 2;
+  renderNewMissionModal();
+}
+
+async function saveMission() {
+  const m = S.newMission;
+  if (!m.name.trim()) { showToast('⚠️ Nom requis'); return; }
+  // Copy checklist templates for this mission
+  const missionChecklists = {};
+  for (const [id, cl] of Object.entries(S.checklists)) {
+    missionChecklists[id] = JSON.parse(JSON.stringify(cl));
+    missionChecklists[id].groups.forEach(g => g.items.forEach(i => i.checked = false));
+  }
+  const mission = {
+    id: genId(),
+    name: m.name.trim(),
+    client: m.client.trim(),
+    addr: m.addr.trim(),
+    date: m.date,
+    time: m.time,
+    droneId: m.droneId,
+    type: m.type,
+    notes: m.notes.trim(),
+    status: 'planned',
+    createdAt: new Date().toISOString(),
+    checklists: missionChecklists,
+    coords: null,
+    weatherData: null,
+  };
+  S.missions.push(mission);
+  saveState();
+  closeModal();
+  showToast('✅ Mission créée ! Géocodage en cours...');
+  // Geocode in background
+  try {
+    const coords = await geocodeAddr(mission.addr);
+    mission.coords = {lat: coords.lat, lon: coords.lon};
+    saveState();
+    showToast('📍 Adresse géolocalisée');
+  } catch(e) {
+    showToast('⚠️ Géocodage échoué — météo manuelle nécessaire');
+  }
+  viewMissions();
+}
+
+function openMission(id) {
+  S.missionDetailId = id;
+  S.view = 'mission-detail';
+  S.missionDetailTab = 'info';
+  S.weatherData = null;
+  S.metarData = null;
+  S.tafData = null;
+  S.notamData = null;
+  S.airspaceData = null;
+  render();
+}
+
+// ---- MISSION DETAIL ----
+function viewMissionDetail() {
+  const mission = getMission(S.missionDetailId);
+  if (!mission) { setView('missions'); return; }
+  const drone = getDrone(mission.droneId);
+  const todayMission = isToday(mission.date);
+
+  document.getElementById('header-sub').textContent = mission.name;
+  document.getElementById('header-right').innerHTML = `
+    <button class="header-btn btn-danger" onclick="deleteMission('${mission.id}')">🗑</button>`;
+
+  const tabs = [
+    {id:'info', label:'Infos'},
+    {id:'weather', label:'Météo'},
+    {id:'airspace', label:'Espace aérien'},
+    {id:'prep', label:'Prép.', cl:true},
+    {id:'drone', label:'Drone', cl:true},
+    {id:'site', label:'Site', cl:true},
+  ];
+  if (todayMission) tabs.push({id:'metar', label:'METAR/TAF'},{id:'notam',label:'NOTAM'});
+
+  let html = `<button class="back-btn" onclick="setView('missions')">← Missions</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-size:20px;font-weight:700">${mission.name}</div>
+        <div style="font-size:13px;color:var(--text2)">${mission.client||'—'} · ${mission.type}</div>
+      </div>
+      <span class="badge ${getMissionStatusBadge(mission.status)}">${getMissionStatusLabel(mission.status)}</span>
+    </div>
+    <div style="overflow-x:auto;margin:0 -16px;padding:0 16px 12px">
+      <div style="display:flex;gap:6px;width:max-content">
+        ${tabs.map(t=>`<button class="tab ${S.missionDetailTab===t.id?'active':''}" style="min-width:64px" onclick="S.missionDetailTab='${t.id}';render()">${t.label}</button>`).join('')}
+      </div>
+    </div>`;
+
+  // Tab content
+  if (S.missionDetailTab==='info') html += renderMissionInfo(mission, drone);
+  else if (S.missionDetailTab==='weather') html += renderMissionWeather(mission);
+  else if (S.missionDetailTab==='airspace') html += renderMissionAirspace(mission);
+  else if (S.missionDetailTab==='prep'||S.missionDetailTab==='drone'||S.missionDetailTab==='site')
+    html += renderMissionChecklist(mission, S.missionDetailTab);
+  else if (S.missionDetailTab==='metar') html += renderMetarTab(mission);
+  else if (S.missionDetailTab==='notam') html += renderNotamTab(mission);
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderMissionInfo(mission, drone) {
+  const prog = ['prep','drone','site'].map(id=>{const p=getChecklistProgress(mission,id);return {...p,id};});
+  const totalDone = prog.reduce((a,p)=>a+p.done,0);
+  const totalItems = prog.reduce((a,p)=>a+p.total,0);
+  const pct = totalItems?Math.round(totalDone/totalItems*100):0;
+
+  let html = `<div class="card">
+    <div class="section-title">Informations mission</div>
+    <div class="decode-row"><span class="decode-label">Date</span><span>📅 ${formatDate(mission.date)} ${mission.time?`à ${mission.time}`:''}</span></div>
+    <div class="decode-row"><span class="decode-label">Lieu</span><span>📍 ${mission.addr}</span></div>
+    ${mission.client?`<div class="decode-row"><span class="decode-label">Client</span><span>${mission.client}</span></div>`:''}
+    ${drone?`<div class="decode-row"><span class="decode-label">Drone</span><span>🚁 ${drone.name}</span></div>`:''}
+    ${mission.notes?`<div class="decode-row"><span class="decode-label">Notes</span><span style="font-size:12px;text-align:right;max-width:200px">${mission.notes}</span></div>`:''}
+  </div>`;
+
+  html += `<div class="card">
+    <div class="section-title">Avancement check-lists</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-labels"><span>${totalDone}/${totalItems} points vérifiés</span><span style="color:${pct===100?'var(--green)':'var(--text2)'}">${pct}%</span></div>
+    </div>
+    ${prog.map(p=>{
+      const pct2=p.total?Math.round(p.done/p.total*100):0;
+      const cl=S.checklists[p.id];
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:18px">${cl.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${cl.name}</div>
+          <div class="m-prog-bar" style="margin-top:4px"><div class="m-prog-fill" style="width:${pct2}%"></div></div>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${p.done}/${p.total}</span>
+        <button class="btn btn-sm btn-secondary" onclick="S.missionDetailTab='${p.id}';render()">→</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  // Status actions
+  html += `<div class="card"><div class="section-title">Actions</div><div style="display:flex;flex-direction:column;gap:8px">`;
+  if (mission.status==='planned')
+    html += `<button class="btn btn-primary" onclick="setMissionStatus('${mission.id}','inprogress')">▶️ Démarrer la mission</button>`;
+  if (mission.status==='inprogress')
+    html += `<button class="btn btn-success" onclick="setMissionStatus('${mission.id}','done')">✅ Terminer la mission</button>`;
+  if (mission.status==='done')
+    html += `<button class="btn btn-secondary" onclick="setMissionStatus('${mission.id}','archived')">📦 Archiver</button>`;
+  if (mission.status!=='planned')
+    html += `<button class="btn btn-secondary" onclick="setMissionStatus('${mission.id}','planned')">↺ Remettre en planifié</button>`;
+  html += `</div></div>`;
+
+  return html;
+}
+
+function renderMissionWeather(mission) {
+  if (!S.weatherData && !S.weatherLoading) {
+    const addr = mission.addr;
+    return `<div class="card">
+      <div class="card-title">Prévisions météo 10 jours</div>
+      <div class="card-sub" style="margin-bottom:14px">Basées sur la position du lieu de vol</div>
+      <button class="btn btn-primary" onclick="loadMissionWeather('${mission.id}')">🌍 Charger la météo</button>
+    </div>`;
+  }
+  if (S.weatherLoading) return `<div class="loading-box"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Récupération météo...</div></div>`;
+
+  const wx = S.weatherData;
+  const sel = wx[S.wxDay];
+  const flyOk = sel.wind<=10 && sel.rain<=40 && sel.sky!=='bad';
+
+  let html = `<div class="wx-scroll"><div class="wx-row">`;
+  wx.forEach((w,i) => {
+    html += `<div class="wx-day ${w.sky} ${S.wxDay===i?'sel':''}" onclick="S.wxDay=${i};render()">
+      <div class="wx-label">${i===0?'AUJ':w.day.toUpperCase()}</div>
+      <div class="wx-icon">${w.icon}</div>
+      <div class="wx-temp">${w.tMax}°</div>
+      <div class="wx-wind">${w.wind}m/s</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  html += `<div class="wx-detail">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:700;font-size:16px">${S.wxDay===0?'Aujourd\'hui':sel.day+' '+new Date(sel.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:3px">${sel.icon} ${sel.temp}</div>
+      </div>
+      <span class="badge ${flyOk?'b-ok':sel.sky==='warn'?'b-warn':'b-err'}">${flyOk?'VOL OK':sel.sky==='warn'?'PRUDENCE':'DÉCONSEILLÉ'}</span>
+    </div>
+    <div class="wx-stats">
+      <div class="wx-stat">
+        <div class="wx-stat-label">VENT MAX</div>
+        <div class="wx-stat-val ${sel.wind<=10?'c-ok':sel.wind<=15?'c-warn':'c-bad'}">${sel.wind}<span class="wx-stat-unit"> m/s</span></div>
+      </div>
+      <div class="wx-stat">
+        <div class="wx-stat-label">PRÉCIP.</div>
+        <div class="wx-stat-val ${sel.rain<=30?'c-ok':sel.rain<=60?'c-warn':'c-bad'}">${sel.rain}<span class="wx-stat-unit">%</span></div>
+      </div>
+      <div class="wx-stat">
+        <div class="wx-stat-label">VISIBILITÉ</div>
+        <div class="wx-stat-val ${sel.vis>=5?'c-ok':sel.vis>=2?'c-warn':'c-bad'}">${sel.vis}<span class="wx-stat-unit"> km</span></div>
+      </div>
+      <div class="wx-stat">
+        <div class="wx-stat-label">T°MAX / T°MIN</div>
+        <div class="wx-stat-val" style="font-size:15px">${sel.tMax}°<span class="wx-stat-unit">/${sel.tMin}°</span></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-secondary btn-sm" style="width:100%" onclick="S.weatherData=null;render()">🔄 Actualiser</button>`;
+  return html;
+}
+
+async function loadMissionWeather(id) {
+  const mission = getMission(id);
+  if (!mission) return;
+  if (mission.coords) {
+    await fetchWeather(mission.coords.lat, mission.coords.lon);
+  } else {
+    try {
+      showToast('📍 Géocodage...');
+      const coords = await geocodeAddr(mission.addr);
+      mission.coords = {lat:coords.lat, lon:coords.lon};
+      saveState();
+      await fetchWeather(coords.lat, coords.lon);
+    } catch(e) { showToast('⚠️ '+e.message); }
+  }
+}
+
+function renderMissionAirspace(mission) {
+  if (!S.settings.openAipKey) {
+    return `<div class="card">
+      <div class="card-title">Espaces aériens</div>
+      <div class="card-sub" style="margin-bottom:14px">Nécessite une clé API OpenAIP (gratuite)</div>
+      <div class="alert-warn" style="font-size:13px;margin-bottom:14px">
+        ⚠️ Pour utiliser cette fonctionnalité, créez un compte gratuit sur 
+        <strong>app.core.openaip.net</strong>, récupérez votre clé API et entrez-la dans les Réglages.
+      </div>
+      <button class="btn btn-secondary" onclick="setView('settings')">⚙️ Configurer la clé API</button>
+    </div>`;
+  }
+  if (S.airspaceLoading) return `<div class="loading-box"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Vérification espaces aériens...</div></div>`;
+  if (!S.airspaceData) {
+    return `<div class="card">
+      <div class="card-title">Vérification espaces aériens</div>
+      <div class="card-sub" style="margin-bottom:14px">Rayon d'analyse : 5km autour du lieu de vol</div>
+      <button class="btn btn-primary" onclick="loadAirspace('${mission.id}')">🗺️ Vérifier les espaces aériens</button>
+    </div>`;
+  }
+  if (S.airspaceData.error) return `<div class="alert-err">${S.airspaceData.error}</div>`;
+
+  const zones = S.airspaceData.zones||[];
+  let html = `<div class="card">
+    <div class="card-header">
+      <div class="card-title">Zones détectées</div>
+      <span class="badge ${zones.length?'b-warn':'b-ok'}">${zones.length?zones.length+' zones':'Aucune restriction'}</span>
+    </div>`;
+
+  if (!zones.length) {
+    html += `<div class="alert-ok">✅ Aucune zone réglementée détectée dans un rayon de 5km. Vol a priori libre sous réserve de vérification NOTAM.</div>`;
+  } else {
+    const TYPE_LABELS = {0:'CTR',1:'TMA',2:'P — Interdit',3:'R — Restreint',4:'D — Dangereux',5:'FIR',6:'UIR',7:'ADIZ',8:'ATZ',9:'MATZ',10:'AWY'};
+    zones.forEach(z => {
+      const type = z.type !== undefined ? (TYPE_LABELS[z.type]||`Type ${z.type}`) : 'Zone';
+      const isRestrictive = [2,3,4].includes(z.type);
+      const isCtr = [0,1,8].includes(z.type);
+      const cls = isRestrictive?'air-bad':isCtr?'air-warn':'air-ok';
+      html += `<div class="air-zone ${cls}">
+        <div class="air-dot"></div>
+        <div class="air-info">
+          <div class="air-name">${z.name||'Zone sans nom'} — ${type}</div>
+          <div class="air-desc">${z.lowerLimit?.value!==undefined?`Plancher: ${z.lowerLimit.value}${z.lowerLimit.unit||'ft'}`:''}${z.upperLimit?.value!==undefined?` · Plafond: ${z.upperLimit.value}${z.upperLimit.unit||'ft'}`:''}</div>
+        </div>
+      </div>`;
+    });
+  }
+  html += `<button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px" onclick="S.airspaceData=null;render()">🔄 Actualiser</button></div>`;
+  return html;
+}
+
+async function loadAirspace(id) {
+  const mission = getMission(id);
+  if (!mission) return;
+  try {
+    if (!mission.coords) {
+      showToast('📍 Géocodage...');
+      const coords = await geocodeAddr(mission.addr);
+      mission.coords = {lat:coords.lat, lon:coords.lon};
+      saveState();
+    }
+    checkAirspace(mission.coords.lat, mission.coords.lon);
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+function renderMissionChecklist(mission, clId) {
+  const cl = mission.checklists?.[clId];
+  if (!cl) return `<div class="alert-err">Check-list introuvable</div>`;
+  const prog = getChecklistProgress(mission, clId);
+  const pct = prog.total ? Math.round(prog.done/prog.total*100) : 0;
+  const crit = hasCriticalUnchecked(mission, clId);
+
+  let html = `<div class="card-sm" style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:600">${cl.icon} ${cl.name}</div>
+      <span class="badge ${pct===100?'b-ok':crit?'b-err':'b-info'}">${pct===100?'COMPLET':crit?'CRITIQUES':'EN COURS'}</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-labels"><span>${prog.done}/${prog.total}</span><span>${pct}%</span></div>
+  </div>`;
+
+  for (const g of cl.groups) {
+    html += `<div class="cl-group-title">${g.title}</div>`;
+    for (const item of g.items) {
+      html += `<div class="cl-item ${item.checked?'checked':''} ${item.critical?'critical':''}" onclick="toggleMissionItem('${mission.id}','${clId}','${g.id}','${item.id}')">
+        <div class="cl-checkbox">${item.checked?'✓':''}</div>
+        <div class="cl-text">${item.text}</div>
+        ${item.critical?`<div class="cl-crit"></div>`:''}
+      </div>`;
+    }
+  }
+  html += `<div class="btn-row">
+    <button class="btn btn-danger" onclick="resetMissionChecklist('${mission.id}','${clId}')">↺ Reset</button>
+    ${pct===100?`<button class="btn btn-success" style="flex:2">✅ Check-list complète !</button>`:`<button class="btn btn-primary" style="flex:2" onclick="checkAllCritical('${mission.id}','${clId}')">✓ Valider critiques</button>`}
+  </div>`;
+  return html;
+}
+
+function toggleMissionItem(mId, clId, gId, itemId) {
+  const mission = getMission(mId);
+  if (!mission) return;
+  const g = mission.checklists[clId]?.groups.find(g=>g.id===gId);
+  if (!g) return;
+  const item = g.items.find(i=>i.id===itemId);
+  if (item) { item.checked = !item.checked; saveState(); render(); }
+}
+
+function resetMissionChecklist(mId, clId) {
+  const mission = getMission(mId);
+  if (!mission || !confirm('Remettre à zéro cette check-list ?')) return;
+  mission.checklists[clId].groups.forEach(g=>g.items.forEach(i=>i.checked=false));
+  saveState(); render(); showToast('↺ Check-list remise à zéro');
+}
+
+function checkAllCritical(mId, clId) {
+  const mission = getMission(mId);
+  if (!mission) return;
+  mission.checklists[clId].groups.forEach(g=>g.items.forEach(i=>{if(i.critical)i.checked=true;}));
+  saveState(); render(); showToast('✓ Points critiques validés');
+}
+
+function renderMetarTab(mission) {
+  let html = `<div class="tabs">
+    <button class="tab ${S.metarTab==='metar'?'active':''}" onclick="S.metarTab='metar';render()">METAR</button>
+    <button class="tab ${S.metarTab==='taf'?'active':''}" onclick="S.metarTab='taf';render()">TAF</button>
+  </div>`;
+
+  if (!S.metarData && !S.metarLoading) {
+    const airport = mission.coords ? findNearestIcao(mission.coords.lat, mission.coords.lon) : {icao:'LFPG',name:'Paris CDG'};
+    html += `<div class="card">
+      <div class="card-title">Bulletin météo aéronautique</div>
+      <div class="card-sub" style="margin-bottom:10px">Aérodrome de référence : ${airport.name} (${airport.icao})</div>
+      <div class="form-group">
+        <label class="form-label">Code ICAO</label>
+        <input class="form-input" id="icao-input" value="${airport.icao}" placeholder="LFPG" style="font-family:var(--mono);text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button class="btn btn-primary" onclick="fetchMetarTaf(document.getElementById('icao-input').value)">📡 Récupérer METAR/TAF</button>
+    </div>`;
+    return html;
+  }
+  if (S.metarLoading) return html + `<div class="loading-box"><div class="spinner"></div><div style="font-size:13px;color:var(--text2)">Interrogation serveur NOAA...</div></div>`;
+
+  if (S.metarTab==='metar') {
+    html += `<div class="section-title">Message METAR</div>
+    <div class="metar-box">${colorMetar(S.metarData||'')}</div>`;
+    const rows = decodeMetarToRows(S.metarData||'');
+    if (rows.length) {
+      html += `<div class="card"><div class="section-title">Décodage</div>`;
+      rows.forEach(r => {
+        html += `<div class="decode-row">
+          <span class="decode-label">${r.label}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;text-align:right">${r.value}</span>
+            ${r.verdict?`<span class="badge ${r.status==='ok'?'b-ok':r.status==='warn'?'b-warn':'b-err'}">${r.verdict}</span>`:''}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  } else {
+    html += `<div class="section-title">Message TAF</div>
+    <div class="metar-box">${S.tafData||''}</div>
+    <div class="alert-info" style="font-size:12px">TEMPO = dégradation temporaire &nbsp;·&nbsp; BECMG = évolution progressive &nbsp;·&nbsp; PROB30/40 = probabilité</div>`;
+  }
+  html += `<button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px" onclick="S.metarData=null;S.tafData=null;render()">🔄 Actualiser</button>`;
+  return html;
+}
+
+function renderNotamTab(mission) {
+  if (!S.notamData) {
+    const airport = mission.coords ? findNearestIcao(mission.coords.lat, mission.coords.lon) : {icao:'LFPG',name:'Paris CDG'};
+    return `<div class="card">
+      <div class="card-title">NOTAM</div>
+      <div class="card-sub" style="margin-bottom:10px">Notices to Airmen — Aérodrome : ${airport.name} (${airport.icao})</div>
+      <div class="alert-info" style="font-size:12px;margin-bottom:14px">Les NOTAM signalent les restrictions temporaires d'espaces aériens, travaux, ou dangers actifs dans votre zone.</div>
+      <button class="btn btn-primary" onclick="loadNotam('${mission.id}')">📋 Charger les NOTAM</button>
+    </div>`;
+  }
+  const {airport, items, error} = S.notamData;
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="section-title" style="margin-bottom:0">NOTAM actifs — ${airport?.icao||''}</div>
+    <span class="badge ${items.length?'b-warn':'b-ok'}">${items.length} NOTAM</span>
+  </div>`;
+  if (error) html += `<div class="alert-warn">⚠️ ${error}</div>`;
+  if (!items.length && !error) html += `<div class="alert-ok">✅ Aucun NOTAM actif détecté pour cet aérodrome.</div>`;
+  items.forEach(n => {
+    html += `<div class="notam-item">
+      <div class="notam-id">${n.notamID||n.id||'NOTAM'}</div>
+      <div class="notam-text">${(n.traditionalMessage||n.message||JSON.stringify(n)).slice(0,300)}</div>
+    </div>`;
+  });
+  html += `<button class="btn btn-secondary btn-sm" style="width:100%;margin-top:4px" onclick="S.notamData=null;render()">🔄 Actualiser</button>`;
+  return html;
+}
+
+async function loadNotam(id) {
+  const mission = getMission(id);
+  if (!mission) return;
+  try {
+    if (!mission.coords) {
+      const coords = await geocodeAddr(mission.addr);
+      mission.coords = {lat:coords.lat, lon:coords.lon};
+      saveState();
+    }
+    fetchNotam(mission.coords.lat, mission.coords.lon);
+  } catch(e) { showToast('⚠️ '+e.message); }
+}
+
+function setMissionStatus(id, status) {
+  const m = getMission(id);
+  if (m) { m.status=status; saveState(); render(); showToast('✅ Statut mis à jour'); }
+}
+
+function deleteMission(id) {
+  if (!confirm('Supprimer cette mission définitivement ?')) return;
+  S.missions = S.missions.filter(m=>m.id!==id);
+  saveState(); setView('missions'); showToast('🗑️ Mission supprimée');
+}
+
+// ---- SETTINGS ----
+function viewSettings() {
+  document.getElementById('header-sub').textContent = 'Réglages';
+  document.getElementById('header-right').innerHTML = '';
+
+  let html = `
+  <div class="section-title">Mon profil</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Nom du télépilote</label>
+      <input class="form-input" id="set-name" value="${S.settings.pilotName}" placeholder="Jean Dupont" oninput="S.settings.pilotName=this.value;saveState()">
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">N° de licence / COASA</label>
+      <input class="form-input" id="set-lic" value="${S.settings.pilotLicense}" placeholder="FR-COASA-XXXXXX" oninput="S.settings.pilotLicense=this.value;saveState()">
+    </div>
+  </div>
+
+  <div class="section-title">Mes drones</div>
+  <div id="drone-list">`;
+
+  S.drones.forEach(d => {
+    html += `<div class="card-sm">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:600;font-size:14px">🚁 ${d.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${d.category} · Vent max: ${d.maxWindMs}m/s${d.serial?` · S/N: ${d.serial}`:''}</div>
+          ${d.notes?`<div style="font-size:11px;color:var(--text2)">${d.notes}</div>`:''}
+        </div>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteDrone(${d.id})">🗑</button>
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  if (!S.showNewDroneForm) {
+    html += `<button class="btn btn-secondary" style="width:100%;margin-bottom:12px" onclick="S.showNewDroneForm=true;render()">+ Ajouter un drone</button>`;
+  } else {
+    html += `<div class="card">
+      <div class="card-title" style="margin-bottom:14px">Nouveau drone</div>
+      <div class="form-group"><label class="form-label">Modèle *</label>
+        <input class="form-input" id="nd-name" placeholder="Ex: DJI Mavic 3" value="${S.newDrone.name}" oninput="S.newDrone.name=this.value"></div>
+      <div class="form-group"><label class="form-label">Numéro de série</label>
+        <input class="form-input" id="nd-serial" placeholder="XXXXXXXXXX" value="${S.newDrone.serial}" oninput="S.newDrone.serial=this.value"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Catégorie EU</label>
+          <select class="form-input" onchange="S.newDrone.category=this.value">
+            ${['C0','C1','C2','C3','C4'].map(c=>`<option ${c===S.newDrone.category?'selected':''}>${c}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label class="form-label">Vent max (m/s)</label>
+          <input type="number" class="form-input" value="${S.newDrone.maxWindMs}" step="0.1" min="0" oninput="S.newDrone.maxWindMs=parseFloat(this.value)"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label class="form-label">Notes</label>
+        <input class="form-input" placeholder="Drone principal, caméra 4K..." value="${S.newDrone.notes}" oninput="S.newDrone.notes=this.value"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="S.showNewDroneForm=false;render()">Annuler</button>
+        <button class="btn btn-primary" onclick="saveDrone()">+ Ajouter</button>
+      </div>
+    </div>`;
+  }
+
+  html += `
+  <div class="section-title">API OpenAIP (espaces aériens)</div>
+  <div class="card">
+    <div class="card-sub" style="margin-bottom:12px">Créez un compte gratuit sur <strong>app.core.openaip.net</strong> pour obtenir votre clé API et activer la vérification des espaces aériens.</div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Clé API OpenAIP</label>
+      <input class="form-input" id="set-aip" type="password" value="${S.settings.openAipKey}" placeholder="Votre clé API" oninput="S.settings.openAipKey=this.value;saveState()">
+    </div>
+  </div>
+
+  <div class="section-title">Données</div>
+  <div class="card">
+    <div class="card-sub" style="margin-bottom:12px">Toutes les données sont stockées localement sur votre appareil.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="exportData()">📤 Exporter</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file').click()">📥 Importer</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+    <button class="btn btn-danger" style="width:100%;margin-top:10px" onclick="resetAllData()">⚠️ Réinitialiser toutes les données</button>
+  </div>
+
+  <div style="text-align:center;padding:20px 0;color:var(--text3);font-size:11px;font-family:var(--mono)">DroneOps v1.0 · Données locales · PWA</div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function saveDrone() {
+  if (!S.newDrone.name.trim()) { showToast('⚠️ Le modèle est requis'); return; }
+  S.drones.push({...S.newDrone, id: genId()});
+  S.newDrone = {name:'',serial:'',category:'C1',maxWindMs:10,batteryCapacity:0,notes:''};
+  S.showNewDroneForm = false;
+  saveState(); showToast('🚁 Drone ajouté !'); viewSettings();
+}
+
+function deleteDrone(id) {
+  if (!confirm('Supprimer ce drone ?')) return;
+  S.drones = S.drones.filter(d=>d.id!==id);
+  saveState(); viewSettings(); showToast('🗑️ Drone supprimé');
+}
+
+function exportData() {
+  const data = JSON.stringify({missions:S.missions,drones:S.drones,checklists:S.checklists,settings:S.settings,docsMeta:S.docsMeta}, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`droneops_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📤 Données exportées');
+}
+
+function importData(input) {
+  const file = input.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.missions) S.missions = data.missions;
+      if (data.drones) S.drones = data.drones;
+      if (data.checklists) S.checklists = data.checklists;
+      if (data.settings) S.settings = data.settings;
+      if (data.docsMeta) S.docsMeta = data.docsMeta;
+      saveState(); render(); showToast('📥 Données importées !');
+    } catch(e) { showToast('⚠️ Fichier invalide'); }
+  };
+  r.readAsText(file);
+}
+
+function resetAllData() {
+  if (!confirm('ATTENTION : Toutes vos missions, documents et réglages seront supprimés. Continuer ?')) return;
+  if (!confirm('Dernière confirmation : réinitialiser toutes les données ?')) return;
+  localStorage.removeItem('droneops_state');
+  location.reload();
+}
+
+// ======================== NAVIGATION ========================
+
+function setView(v) {
+  S.view = v;
+  S.editingChecklistId = null;
+  if (v !== 'mission-detail') S.missionDetailId = null;
+  render();
+}
+
+function closeModal(e) {
+  if (!e || e.target.classList.contains('modal-overlay')) {
+    document.getElementById('modal-container').innerHTML = '';
+    pendingDocFile = null;
+  }
+}
+
+// ======================== MAIN RENDER ========================
+
+function render() {
+  renderNav();
+  const views = {
+    'home': viewHome,
+    'docs': viewDocs,
+    'checklists': viewChecklists,
+    'missions': viewMissions,
+    'mission-detail': viewMissionDetail,
+    'settings': viewSettings,
+  };
+  (views[S.view]||viewHome)();
+  // Scroll to top on view change
+  document.getElementById('content').scrollTop = 0;
+}
+
+// ======================== INIT ========================
+
+async function init() {
+  await DocDB.init();
+  loadState();
+  // Ensure checklists have all default keys
+  for (const key of Object.keys(DEFAULT_CHECKLISTS)) {
+    if (!S.checklists[key]) S.checklists[key] = JSON.parse(JSON.stringify(DEFAULT_CHECKLISTS[key]));
+  }
+  render();
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
