@@ -55,8 +55,8 @@ a{color:var(--accent);text-decoration:none}
 .header-sub{font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .header-btn:hover{border-color:var(--border2);color:var(--text)}
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(88px + env(safe-area-inset-bottom, 20px))}
-.nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom, 0px)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(88px + var(--sys-nav-h, 0px))}
+.nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:var(--sys-nav-h, 0px);min-height:62px}
 .nav-btn{flex:1;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:var(--sans);font-size:10px;font-weight:500;transition:color .2s}
 .nav-btn.active{color:var(--accent)}
 .nav-btn svg{width:22px;height:22px;stroke-width:1.8}
@@ -234,7 +234,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator{filter:invert(.
 .tabs{display:flex;gap:6px;margin-bottom:14px}
 .tab{flex:1;padding:9px 6px;border-radius:var(--rs);font-size:12px;font-weight:600;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;text-align:center}
 .tab.active{background:rgba(77,159,255,.12);color:var(--accent);border-color:rgba(77,159,255,.35)}
-.toast{position:fixed;bottom:calc(82px + env(safe-area-inset-bottom, 20px));left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:toastIn .25s ease;pointer-events:none;max-width:90vw;text-align:center}
+.toast{position:fixed;bottom:calc(82px + var(--sys-nav-h, 0px));left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:toastIn .25s ease;pointer-events:none;max-width:90vw;text-align:center}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .alert-box{padding:12px 14px;border-radius:var(--rs);font-size:13px;margin-bottom:12px;border:1px solid}
 .alert-info{background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--accent)}
@@ -2078,6 +2078,34 @@ function render() {
 // ======================== INIT ========================
 
 async function init() {
+  // ---- Détection fiable de la barre de navigation Android ----
+  function applyNavInset() {
+    // Méthode 1 : lire env(safe-area-inset-bottom) via un élément DOM
+    // Fonctionne sur iOS et Android récents avec viewport-fit=cover
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden;z-index:-1';
+    document.documentElement.appendChild(probe);
+    const envInset = probe.offsetHeight || 0;
+    document.documentElement.removeChild(probe);
+
+    // Méthode 2 : différence écran/fenêtre (fiable pour nav 3 boutons Android)
+    // screen.availHeight = écran sans barre de statut
+    // window.innerHeight = zone dispo pour la page (excluant nav bar 3-boutons)
+    const screenInset = Math.max(0, (window.screen.availHeight || 0) - window.innerHeight);
+
+    // Méthode 3 : fallback mode standalone (PWA installée)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || window.navigator.standalone === true;
+    const standaloneMin = isStandalone ? 22 : 0;
+
+    // On prend le maximum des 3 méthodes
+    const finalInset = Math.max(envInset, screenInset > 120 ? 0 : screenInset, standaloneMin);
+    document.documentElement.style.setProperty('--sys-nav-h', finalInset + 'px');
+  }
+
+  applyNavInset();
+  window.addEventListener('resize', applyNavInset);
+  // ---- Fin détection ----
   await DocDB.init();
   loadState();
   // Merge default checklists without overwriting user customizations.
