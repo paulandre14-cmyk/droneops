@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#090d18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -55,8 +55,8 @@ a{color:var(--accent);text-decoration:none}
 .header-sub{font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .header-btn:hover{border-color:var(--border2);color:var(--text)}
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 90px}
-.nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(88px + env(safe-area-inset-bottom, 20px))}
+.nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom, 0px)}
 .nav-btn{flex:1;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:var(--sans);font-size:10px;font-weight:500;transition:color .2s}
 .nav-btn.active{color:var(--accent)}
 .nav-btn svg{width:22px;height:22px;stroke-width:1.8}
@@ -234,7 +234,7 @@ input[type="date"].form-input::-webkit-calendar-picker-indicator{filter:invert(.
 .tabs{display:flex;gap:6px;margin-bottom:14px}
 .tab{flex:1;padding:9px 6px;border-radius:var(--rs);font-size:12px;font-weight:600;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;text-align:center}
 .tab.active{background:rgba(77,159,255,.12);color:var(--accent);border-color:rgba(77,159,255,.35)}
-.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:toastIn .25s ease;pointer-events:none;max-width:90vw;text-align:center}
+.toast{position:fixed;bottom:calc(82px + env(safe-area-inset-bottom, 20px));left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:toastIn .25s ease;pointer-events:none;max-width:90vw;text-align:center}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .alert-box{padding:12px 14px;border-radius:var(--rs);font-size:13px;margin-bottom:12px;border:1px solid}
 .alert-info{background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--accent)}
@@ -917,7 +917,7 @@ function viewDocs() {
           else if (days <= 30) { expiryClass='doc-expiry-warn'; expiryHtml=`⚠️ Expire dans ${days}j`; }
           else { expiryClass='doc-expiry-ok'; expiryHtml=`✅ Valide jusqu'au ${formatDateShort(doc.expiry)}`; }
         }
-        html += `<div class="doc-item">
+        html += `<div class="doc-item" onclick="openDocDetail('${doc.id}')">
           <div class="doc-icon" style="background:${cat.color}20">${cat.icon}</div>
           <div class="doc-info">
             <div class="doc-name">${doc.name}</div>
@@ -926,8 +926,9 @@ function viewDocs() {
               ${expiryHtml?`<span class="${expiryClass}" style="display:block;margin-top:2px">${expiryHtml}</span>`:''}
             </div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-secondary btn-icon" title="Voir" onclick="viewDoc('${doc.id}')">👁</button>
+          <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+            ${doc.hasFile?`<button class="btn btn-sm btn-secondary btn-icon" title="Voir le fichier" onclick="viewDoc('${doc.id}')">👁</button>`:'<span style="font-size:18px;opacity:.4" title="Pas de fichier">📎</span>'}
+            <button class="btn btn-sm btn-secondary btn-icon" title="Modifier" onclick="openEditDocModal('${doc.id}')">✏️</button>
             <button class="btn btn-sm btn-danger btn-icon" title="Supprimer" onclick="deleteDoc('${doc.id}')">🗑</button>
           </div>
         </div>`;
@@ -1018,12 +1019,138 @@ async function saveDoc() {
 
 async function viewDoc(id) {
   const meta = S.docsMeta.find(d=>d.id===id);
-  if (!meta?.hasFile) { showToast('⚠️ Aucun fichier associé'); return; }
+  if (!meta?.hasFile) { showToast('⚠️ Aucun fichier — utilisez ✏️ pour en ajouter un'); return; }
   const doc = await DocDB.getAll().then(docs=>docs.find(d=>d.id===id));
   if (!doc) { showToast('⚠️ Fichier introuvable'); return; }
   const win = window.open('');
-  win.document.write(`<title>${meta.name}</title><body style="margin:0;background:#000"><img src="${doc.blob}" style="max-width:100%;display:block;margin:auto"></body>`);
-  if (doc.mimeType==='application/pdf') win.document.write(`<body style="margin:0"><embed src="${doc.blob}" width="100%" height="100%" type="application/pdf"></body>`);
+  if (doc.mimeType==='application/pdf') {
+    win.document.write(`<title>${meta.name}</title><body style="margin:0"><embed src="${doc.blob}" width="100%" height="100%" type="application/pdf"></body>`);
+  } else {
+    win.document.write(`<title>${meta.name}</title><body style="margin:0;background:#000"><img src="${doc.blob}" style="max-width:100%;display:block;margin:auto"></body>`);
+  }
+}
+
+function openDocDetail(id) {
+  const meta = S.docsMeta.find(d=>d.id===id);
+  if (!meta) return;
+  const cat = DOC_CATEGORIES.find(c=>c.id===meta.category)||DOC_CATEGORIES[4];
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:48px;height:48px;border-radius:12px;background:${cat.color}20;display:flex;align-items:center;justify-content:center;font-size:24px">${cat.icon}</div>
+          <div><div style="font-weight:700;font-size:16px">${meta.name}</div>
+          <div style="font-size:12px;color:var(--text2)">${cat.label}</div></div>
+        </div>
+        ${meta.number?`<div class="decode-row"><span class="decode-label">Numéro</span><span>${meta.number}</span></div>`:''}
+        ${meta.expiry?`<div class="decode-row"><span class="decode-label">Expiration</span><span>${formatDateShort(meta.expiry)}</span></div>`:''}
+        <div class="decode-row"><span class="decode-label">Ajouté le</span><span>${meta.addedDate||'—'}</span></div>
+        <div class="decode-row"><span class="decode-label">Fichier</span><span>${meta.hasFile?'📎 '+( meta.fileName||'présent'):'❌ Aucun fichier joint'}</span></div>
+        <div class="btn-row" style="margin-top:16px">
+          ${meta.hasFile?`<button class="btn btn-secondary" onclick="viewDoc('${meta.id}')">👁 Ouvrir</button>`:''}
+          <button class="btn btn-primary" style="flex:1" onclick="openEditDocModal('${meta.id}')">✏️ Modifier</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openEditDocModal(id) {
+  const meta = S.docsMeta.find(d=>d.id===id);
+  if (!meta) return;
+  pendingDocFile = null;
+  const catOptions = DOC_CATEGORIES.map(c=>`<option value="${c.id}" ${c.id===meta.category?'selected':''}>${c.icon} ${c.label}</option>`).join('');
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Modifier le document</div>
+        <div class="form-group">
+          <label class="form-label">Nom du document</label>
+          <input class="form-input" id="edit-doc-name" value="${meta.name.replace(/"/g,'&quot;')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catégorie</label>
+          <select class="form-input" id="edit-doc-cat">${catOptions}</select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro / Référence</label>
+          <input class="form-input" id="edit-doc-num" value="${(meta.number||'').replace(/"/g,'&quot;')}" placeholder="Ex: 2024-FR-42">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date d'expiration</label>
+          <input type="date" class="form-input" id="edit-doc-expiry" value="${meta.expiry||''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">${meta.hasFile?'Fichier joint (remplacer)':'Fichier joint (ajouter)'}</label>
+          ${meta.hasFile?`<div style="padding:8px 12px;background:var(--bg3);border-radius:var(--rs);font-size:12px;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            <span>📎 ${meta.fileName||'Fichier présent'}</span>
+            <button class="btn btn-danger btn-sm" style="margin-left:auto;padding:4px 8px;font-size:11px" onclick="removeDocFile('${id}')">✕ Supprimer</button>
+          </div>`:''}
+          <div class="file-upload-area" id="edit-drop-zone" onclick="document.getElementById('edit-doc-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleEditDocDrop(event)">
+            <div class="file-upload-icon" style="font-size:28px">📎</div>
+            <div style="font-size:13px;font-weight:600">${meta.hasFile?'Appuyer pour remplacer':'Appuyer pour sélectionner un fichier'}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px">PDF, JPG, PNG — max 20 Mo</div>
+            <div id="edit-file-name" style="font-size:12px;color:var(--green);margin-top:6px"></div>
+          </div>
+          <input type="file" id="edit-doc-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleEditDocFile(this)">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-primary" style="flex:1" onclick="updateDoc('${id}')">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function handleEditDocFile(input) {
+  if (input.files[0]) {
+    pendingDocFile = input.files[0];
+    const el = document.getElementById('edit-file-name');
+    if (el) el.textContent = '✓ ' + pendingDocFile.name;
+  }
+}
+
+function handleEditDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('edit-drop-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) { pendingDocFile = file; document.getElementById('edit-file-name').textContent = '✓ ' + file.name; }
+}
+
+async function removeDocFile(id) {
+  const meta = S.docsMeta.find(d=>d.id===id);
+  if (!meta) return;
+  meta.hasFile = false; meta.fileName = '';
+  await DocDB.delete(id).catch(()=>{});
+  saveState();
+  showToast('🗑️ Fichier supprimé');
+  openEditDocModal(id);
+}
+
+async function updateDoc(id) {
+  const meta = S.docsMeta.find(d=>d.id===id);
+  if (!meta) return;
+  const name = document.getElementById('edit-doc-name').value.trim();
+  if (!name) { showToast('⚠️ Le nom est requis'); return; }
+  meta.name = name;
+  meta.category = document.getElementById('edit-doc-cat').value;
+  meta.number = document.getElementById('edit-doc-num').value.trim();
+  meta.expiry = document.getElementById('edit-doc-expiry').value;
+  if (pendingDocFile) {
+    const blob = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(pendingDocFile); });
+    await DocDB.put({id, name, blob, mimeType: pendingDocFile.type});
+    meta.hasFile = true;
+    meta.fileName = pendingDocFile.name;
+  }
+  pendingDocFile = null;
+  saveState();
+  closeModal();
+  showToast('✅ Document mis à jour !');
+  viewDocs();
 }
 
 async function deleteDoc(id) {
@@ -1101,6 +1228,9 @@ function renderChecklistEditor() {
   document.getElementById('header-right').innerHTML = `<button class="header-btn" onclick="S.editingChecklistId=null;render()">✓ Terminé</button>`;
 
   let html = `<button class="back-btn" onclick="S.editingChecklistId=null;render()">← Retour</button>
+    <div class="alert-ok" style="font-size:12px;margin-bottom:10px">
+      🔒 Vos modifications sont <strong>sauvegardées localement</strong> et <strong>résistent aux mises à jour</strong> de l'application.
+    </div>
     <div class="alert-info" style="font-size:12px;margin-bottom:14px">
       ✏️ Modifiez vos items. <strong>Point rouge</strong> = critique (bloque la progression). 
       Appuyez sur 🗑 pour supprimer, + pour ajouter.
@@ -1950,10 +2080,34 @@ function render() {
 async function init() {
   await DocDB.init();
   loadState();
-  // Ensure checklists have all default keys
-  for (const key of Object.keys(DEFAULT_CHECKLISTS)) {
-    if (!S.checklists[key]) S.checklists[key] = JSON.parse(JSON.stringify(DEFAULT_CHECKLISTS[key]));
+  // Merge default checklists without overwriting user customizations.
+  // - If a checklist key doesn't exist yet (new version added one) → create it from default.
+  // - If a checklist exists → keep ALL user changes. Never overwrite.
+  // - Only inject new groups/items that the user doesn't have yet (new version additions).
+  for (const [key, defaultCl] of Object.entries(DEFAULT_CHECKLISTS)) {
+    if (!S.checklists[key]) {
+      // Brand new checklist key → create from default
+      S.checklists[key] = JSON.parse(JSON.stringify(defaultCl));
+    } else {
+      // Checklist exists → only add missing groups (by id), never touch existing ones
+      const userCl = S.checklists[key];
+      for (const defGroup of defaultCl.groups) {
+        const userGroup = userCl.groups.find(g => g.id === defGroup.id);
+        if (!userGroup) {
+          // New group added in a future app version → append it
+          userCl.groups.push(JSON.parse(JSON.stringify(defGroup)));
+        } else {
+          // Group exists → only add missing items (by id)
+          for (const defItem of defGroup.items) {
+            if (!userGroup.items.find(i => i.id === defItem.id)) {
+              userGroup.items.push(JSON.parse(JSON.stringify(defItem)));
+            }
+          }
+        }
+      }
+    }
   }
+  saveState();
   render();
   // Register service worker
   if ('serviceWorker' in navigator) {
